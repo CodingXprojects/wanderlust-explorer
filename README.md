@@ -55,7 +55,15 @@ Follow these steps to set up the project locally:
 5. **Start the development server**
    ```bash
    npm run dev
+   
    ```
+   Also start backend server
+      ```bash
+   cd server
+      python server.py
+   
+   ```
+   
 
 ## 📋 Usage
 
