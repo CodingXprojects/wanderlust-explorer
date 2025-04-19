@@ -1,0 +1,53 @@
+.image-loading {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  background-color: #f3f4f6;
+  overflow: hidden;
+}
+
+.image-loading::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  animation: shimmer 1.2s infinite linear;
+  background: linear-gradient(
+    90deg,
+    #f3f4f6 0%,
+    #e5e7eb 50%,
+    #f3f4f6 100%
+  );
+  background-size: 200% 100%;
+  transform: translateX(-100%);
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.image-loading.loaded::before {
+  animation: none;
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+}
+
+.image-loading img {
+  position: relative;
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  will-change: opacity;
+  transform: translateZ(0);
+}
+
+.image-loading img.loaded {
+  opacity: 1;
+}
+
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}

@@ -1,0 +1,18 @@
+.location-search-container {
+  position: relative;
+  z-index: 100;
+}
+
+/* Make sure dropdown options don't get cut off */
+.css-26l3qy-menu {
+  z-index: 999 !important;
+}
+
+/* Google Places Autocomplete custom styles */
+.place-autocomplete-control {
+  padding: 4px;
+  border-radius: 0.375rem;
+  border-color: #e2e8f0;
+  min-height: 42px;
+  width: 100%;
+}

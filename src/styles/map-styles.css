@@ -1,0 +1,70 @@
+/* Add styles to ensure proper scrolling in the Map component */
+.map-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+/* Make sure the places container can scroll */
+.places-container {
+  overflow-y: auto;
+  padding-bottom: 20px; /* Add padding at the bottom for better UX */
+}
+
+/* Make search container sticky at the top */
+.search-container {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: white;
+}
+
+/* Make info windows properly formatted */
+.gm-style-iw {
+  padding: 12px !important;
+}
+
+/* Add custom marker hover effect */
+.marker:hover {
+  z-index: 999 !important;
+}
+
+/* Style place cards for consistent appearance */
+.place-card {
+  transition: all 0.3s ease-in-out;
+}
+
+.place-card:hover {
+  transform: translateY(-5px);
+}
+
+/* AR Experience specific styles */
+.ar-view-button {
+  background: linear-gradient(135deg, #8a2be2, #4169e1);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(138, 43, 226, 0.2);
+}
+
+.ar-view-button:hover {
+  background: linear-gradient(135deg, #9932cc, #4876ff);
+  box-shadow: 0 6px 8px rgba(138, 43, 226, 0.3);
+  transform: translateY(-2px);
+}
+
+.ar-info-panel {
+  background-color: #f8f9fa;
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 16px;
+  border-left: 4px solid #8a2be2;
+}

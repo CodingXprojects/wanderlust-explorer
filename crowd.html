@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monument Crowd Analytics</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.4.0/ol.css">
+    <script src="https://cdn.jsdelivr.net/npm/ol@v7.4.0/dist/ol.js"></script>
+    <style>
+        body, html { 
+            margin: 0; 
+            height: 100%; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+        }
+        #map { 
+            width: 100%; 
+            height: 85vh;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .controls {
+            padding: 20px;
+            background: white;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        select, button {
+            padding: 8px 15px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: white;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .stats {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <select id="monument">
+            <option value="taj_mahal">Taj Mahal</option>
+            <option value="red_fort">Red Fort</option>
+            <option value="qutub_minar">Qutub Minar</option>
+            <option value="gateway_of_india">Gateway of India</option>
+            <option value="india_gate">India Gate</option>
+            <option value="humayuns_tomb">Humayun's Tomb</option>
+            <option value="mysore_palace">Mysore Palace</option>
+            <option value="golden_temple">Golden Temple</option>
+            <option value="hawa_mahal">Hawa Mahal</option>
+            <option value="dal_lake">Dal Lake</option>
+            <option value="kedarnath_temple">Kedarnath Temple</option>
+            <option value="golconda_fort">Golconda Fort</option>
+            <option value="marina_beach">Marina Beach</option>
+            <option value="baga_beach">Baga Beach</option>
+            <option value="rohtang_pass">Rohtang Pass</option>
+        </select>
+        <select id="time">
+            <option value="early_morning">Early Morning (6-8 AM)</option>
+            <option value="morning">Morning (8-11 AM)</option>
+            <option value="noon">Noon (11 AM-2 PM)</option>
+            <option value="afternoon">Afternoon (2-5 PM)</option>
+            <option value="evening">Evening (5-7 PM)</option>
+        </select>
+        <select id="season">
+            <option value="summer">Summer (Mar-Jun)</option>
+            <option value="monsoon">Monsoon (Jul-Sep)</option>
+            <option value="winter">Winter (Oct-Feb)</option>
+        </select>
+        <select id="special_day">
+            <option value="regular">Regular Day</option>
+            <option value="weekend">Weekend</option>
+            <option value="diwali">Diwali Season</option>
+            <option value="christmas">Christmas Season</option>
+            <option value="new_year">New Year</option>
+            <option value="independence">Independence Day</option>
+        </select>
+        <button onclick="updateHeatmap()">Update Crowd Data</button>
+    </div>
+    <div id="map"></div>
+    <script>
+        const monumentData = {
+            taj_mahal: {
+                center: [78.0421, 27.1751],
+                zoom: 16,
+                basePoints: [
+                    { coords: [78.0421, 27.1751], type: 'main_entrance', weight: 1.0 },
+                    { coords: [78.0425, 27.1755], type: 'garden', weight: 0.7 },
+                    { coords: [78.0418, 27.1748], type: 'west_gate', weight: 0.6 },
+                    { coords: [78.0424, 27.1747], type: 'south_gate', weight: 0.5 },
+                    { coords: [78.0422, 27.1753], type: 'photo_spot', weight: 0.8 }
+                ],
+                peakHours: {
+                    early_morning: 0.6,
+                    morning: 1.0,
+                    noon: 0.8,
+                    afternoon: 0.7,
+                    evening: 0.9
+                },
+                seasonalPatterns: {
+                    summer: { factor: 0.7, description: "Hot weather reduces crowds" },
+                    monsoon: { factor: 0.4, description: "Rainy season, lowest footfall" },
+                    winter: { factor: 1.0, description: "Perfect weather, peak tourism" }
+                }
+            },
+            red_fort: {
+                center: [77.2410, 28.6562],
+                zoom: 16,
+                basePoints: [
+                    { coords: [77.2410, 28.6562], type: 'main_entrance', weight: 1.0 },
+                    { coords: [77.2415, 28.6565], type: 'museum', weight: 0.8 },
+                    { coords: [77.2408, 28.6559], type: 'courtyard', weight: 0.6 },
+                    { coords: [77.2413, 28.6558], type: 'market', weight: 0.9 }
+                ],
+                peakHours: {
+                    early_morning: 0.3,
+                    morning: 0.8,
+                    noon: 1.0,
+                    afternoon: 0.9,
+                    evening: 0.7
+                },
+                seasonalPatterns: {
+                    summer: { factor: 0.6, description: "Moderate crowds due to heat" },
+                    monsoon: { factor: 0.5, description: "Less crowded during rains" },
+                    winter: { factor: 0.9, description: "High tourist season" }
+                }
+            },
+            qutub_minar: {
+                center: [77.1855, 28.5245],
+                zoom: 17,
+                basePoints: [
+                    { coords: [77.1855, 28.5245], type: 'main_entrance', weight: 1.0 },
+                    { coords: [77.1858, 28.5247], type: 'tower_base', weight: 0.9 },
+                    { coords: [77.1853, 28.5243], type: 'mosque', weight: 0.6 },
+                    { coords: [77.1856, 28.5240], type: 'garden', weight: 0.5 }
+                ],
+                peakHours: {
+                    early_morning: 0.5,
+                    morning: 0.9,
+                    noon: 0.7,
+                    afternoon: 0.8,
+                    evening: 0.6
+                },
+                seasonalPatterns: {
+                    summer: { factor: 0.6, description: "Hot conditions limit visitors" },
+                    monsoon: { factor: 0.5, description: "Slippery conditions reduce visits" },
+                    winter: { factor: 0.9, description: "Pleasant weather attracts tourists" }
+                }
+            },
+            gateway_of_india: {
+                center: [72.8347, 18.9220],
+                zoom: 17,
+                basePoints: [
+                    { coords: [72.8347, 18.9220], type: 'main_entrance', weight: 1.0 },
+                    { coords: [72.8350, 18.9222], type: 'waterfront', weight: 0.95 },
+                    { coords: [72.8345, 18.9218], type: 'photo_spot', weight: 0.8 },
+                    { coords: [72.8348, 18.9217], type: 'boat_launch', weight: 0.7 }
+                ],
+                peakHours: {
+                    early_morning: 0.4,
+                    morning: 0.7,
+                    noon: 0.8,
+                    afternoon: 0.9,
+                    evening: 1.0
+                },
+                seasonalPatterns: {
+                    summer: { factor: 0.8, description: "Sea breeze makes it pleasant" },
+                    monsoon: { factor: 0.5, description: "Rough seas reduce boat tours" },
+                    winter: { factor: 1.0, description: "Peak tourist season" }
+                }
+            },
+            india_gate: {
+                center: [77.2295, 28.6129],
+                zoom: 16,
+                basePoints: [
+                    { coords: [77.2295, 28.6129], type: 'main_monument', weight: 1.0 },
+                    { coords: [77.2292, 28.6132], type: 'canopy', weight: 0.8 },
+                    { coords: [77.2298, 28.6127], type: 'lawn', weight: 0.7 },
+                    { coords: [77.2287, 28.6125], type: 'food_vendors', weight: 0.9 }
+                ],
+                peakHours: {
+                    early_morning: 0.5,
+                    morning: 0.6,
+                    noon: 0.7,
+                    afternoon: 0.8,
+                    evening: 1.0
+                },
+                seasonalPatterns: {
+                    summer: { factor: 0.7, description: "Evening visits common to avoid heat" },
+                    monsoon: { factor: 0.6, description: "Fewer visitors during heavy rain" },
+                    winter: { factor: 0.9, description: "Fog sometimes adds to the ambiance" }
+                }
+            },
+            humayuns_tomb: {
+                center: [77.2507, 28.5933],
+                zoom: 16,
+                basePoints: [
+                    { coords: [77.2507, 28.5933], type: 'main_entrance', weight: 1.0 },
+                    { coords: [77.2510, 28.5936], type: 'tomb', weight: 0.9 },
+                    { coords: [77.2504, 28.5930], type: 'garden', weight: 0.7 },
+                    { coords: [77.2512, 28.5932], type: 'mosque', weight: 0.6 }
+                ],
+                peakHours: {
+                    early_morning: 0.6,
+                    morning: 0.9,
+                    noon: 0.7,
+                    afternoon: 0.8,
+                    evening: 0.5
+                },
+                seasonalPatterns: {
+                    summer: { factor: 0.6, description: "Gardens less appealing in heat" },
+                    monsoon: { factor: 0.8, description: "Gardens are lush and beautiful" },
+                    winter: { factor: 0.9, description: "Perfect weather for exploration" }
+                }
+            },
+            mysore_palace: {
+                center: [76.6552, 12.3052],
+                zoom: 17,
+                basePoints: [
+                    { coords: [76.6552, 12.3052], type: 'main_entrance', weight: 1.0 },
+                    { coords: [76.6550, 12.3050], type: 'durbar_hall', weight: 0.9 },
+                    { coords: [76.6554, 12.3055], type: 'garden', weight: 0.7 },
+                    { coords: [76.6548, 12.3053], type: 'light_show_area', weight: 0.8 }
+                ],
+                peakHours: {
+                    early_morning: 0.3,
+                    morning: 0.7,
+                    noon: 0.8,
+                    afternoon: 0.6,
+                    evening: 1.0
+                },
+                seasonalPatterns: {
+                    summer: { factor: 0.7, description: "Moderate crowds" },
+                    monsoon: { factor: 0.6, description: "Fewer tourists during rainy season" },
+                    winter: { factor: 0.9, description: "Pleasant weather, dasara festival" }
+                }
+            },
+            golden_temple: {
+                center: [74.8765, 31.6200],
+                zoom: 17,
+                basePoints: [
+                    { coords: [74.8765, 31.6200], type: 'main_entrance', weight: 0.9 },
+                    { coords: [74.8763, 31.6203], type: 'temple', weight: 1.0 },
+                    { coords: [74.8767, 31.6198], type: 'langar', weight: 0.8 },
+                    { coords: [74.8761, 31.6201], type: 'sarovar', weight: 0.9 }
+                ],
+                peakHours: {
+                    early_morning: 1.0,
+                    morning: 0.8,
+                    noon: 0.7,
+                    afternoon: 0.8,
+                    evening: 0.9
+                },
+                seasonalPatterns: {
+                    summer: { factor: 0.8, description: "Consistent pilgrimage throughout year" },
+                    monsoon: { factor: 0.7, description: "Slightly fewer tourists" },
+                    winter: { factor: 1.0, description: "Peak tourist season, religious festivals" }
+                }
+            },
+            hawa_mahal: {
+                center: [75.8267, 26.9239],
+                zoom: 17,
+                basePoints: [
+                    { coords: [75.8267, 26.9239], type: 'main_facade', weight: 1.0 },
+                    { coords: [75.8270, 26.9241], type: 'entrance', weight: 0.9 },
+                    { coords: [75.8265, 26.9237], type: 'courtyard', weight: 0.7 },
+                    { coords: [75.8269, 26.9236], type: 'viewing_area', weight: 0.8 }
+                ],
+                peakHours: {
+                    early_morning: 0.6,
+                    morning: 0.9,
+                    noon: 1.0,
+                    afternoon: 0.8,
+                    evening: 0.7
+                },
+                seasonalPatterns: {
+                    summer: { factor: 0.6, description: "Hot, fewer tourists in peak afternoon" },
+                    monsoon: { factor: 0.7, description: "Rainfall impacts photography opportunities" },
+                    winter: { factor: 0.9, description: "Pleasant weather, good for sightseeing" }
+                }
+            },
+            dal_lake: {
+                center: [74.8420, 34.1256],
+                zoom: 14,
+                basePoints: [
+                    { coords: [74.8420, 34.1256], type: 'houseboat_area', weight: 1.0 },
+                    { coords: [74.8440, 34.1265], type: 'boat_station', weight: 0.9 },
+                    { coords: [74.8410, 34.1240], type: 'scenic_point', weight: 0.8 },
+                    { coords: [74.8400, 34.1250], type: 'market_area', weight: 0.7 }
+                ],
+                peakHours: {
+                    early_morning: 0.7,
+                    morning: 0.8,
+                    noon: 0.7,
+                    afternoon: 0.8,
+                    evening: 1.0
+                },
+                seasonalPatterns: {
+                    summer: { factor: 1.0, description: "Peak tourist season" },
+                    monsoon: { factor: 0.5, description: "Frequent rains reduce boat trips" },
+                    winter: { factor: 0.4, description: "Very cold, frozen lake parts" }
+                }
+            },
+            kedarnath_temple: {
+                center: [79.0669, 30.7346],
+                zoom: 16,
+                basePoints: [
+                    { coords: [79.0669, 30.7346], type: 'temple_entrance', weight: 1.0 },
+                    { coords: [79.0665, 30.7343], type: 'pilgrim_path', weight: 0.9 },
+                    { coords: [79.0672, 30.7348], type: 'scenic_viewpoint', weight: 0.7 },
+                    { coords: [79.0670, 30.7340], type: 'gathering_area', weight: 0.8 }
+                ],
+                peakHours: {
+                    early_morning: 1.0,
+                    morning: 0.9,
+                    noon: 0.7,
+                    afternoon: 0.6,
+                    evening: 0.8
+                },
+                seasonalPatterns: {
+                    summer: { factor: 1.0, description: "Main pilgrimage season (May-June)" },
+                    monsoon: { factor: 0.3, description: "Often closed due to heavy rainfall" },
+                    winter: { factor: 0.1, description: "Closed from Nov-Apr due to heavy snow" }
+                }
+            },
+            golconda_fort: {
+                center: [78.4009, 17.3833],
+                zoom: 15,
+                basePoints: [
+                    { coords: [78.4009, 17.3833], type: 'main_entrance', weight: 1.0 },
+                    { coords: [78.4012, 17.3840], type: 'light_sound_area', weight: 0.9 },
+                    { coords: [78.4000, 17.3825], type: 'fort_summit', weight: 0.8 },
+                    { coords: [78.4020, 17.3830], type: 'historic_ruins', weight: 0.7 }
+                ],
+                peakHours: {
+                    early_morning: 0.5,
+                    morning: 0.7,
+                    noon: 0.5,
+                    afternoon: 0.6,
+                    evening: 1.0
+                },
+                seasonalPatterns: {
+                    summer: { factor: 0.6, description: "Hot climate reduces daytime visits" },
+                    monsoon: { factor: 0.8, description: "Greenery makes it more appealing" },
+                    winter: { factor: 1.0, description: "Perfect weather for exploration" }
+                }
+            },
+            marina_beach: {
+                center: [80.2823, 13.0500],
+                zoom: 15,
+                basePoints: [
+                    { coords: [80.2823, 13.0500], type: 'main_beach', weight: 1.0 },
+                    { coords: [80.2820, 13.0510], type: 'lighthouse', weight: 0.7 },
+                    { coords: [80.2830, 13.0490], type: 'vendor_area', weight: 0.9 },
+                    { coords: [80.2815, 13.0505], type: 'walking_path', weight: 0.8 }
+                ],
+                peakHours: {
+                    early_morning: 0.7,
+                    morning: 0.5,
+                    noon: 0.3,
+                    afternoon: 0.5,
+                    evening: 1.0
+                },
+                seasonalPatterns: {
+                    summer: { factor: 0.8, description: "Evening sea breeze attracts visitors" },
+                    monsoon: { factor: 0.4, description: "Rough sea conditions limit beach use" },
+                    winter: { factor: 0.9, description: "Pleasant climate, ideal for beach walk" }
+                }
+            },
+            baga_beach: {
+                center: [73.7546, 15.5553],
+                zoom: 16,
+                basePoints: [
+                    { coords: [73.7546, 15.5553], type: 'main_beach', weight: 1.0 },
+                    { coords: [73.7550, 15.5560], type: 'shack_area', weight: 0.9 },
+                    { coords: [73.7542, 15.5550], type: 'water_sports', weight: 0.8 },
+                    { coords: [73.7540, 15.5545], type: 'parking_area', weight: 0.6 }
+                ],
+                peakHours: {
+                    early_morning: 0.3,
+                    morning: 0.5,
+                    noon: 0.7,
+                    afternoon: 0.8,
+                    evening: 1.0
+                },
+                seasonalPatterns: {
+                    summer: { factor: 0.6, description: "Off-season, fewer tourists" },
+                    monsoon: { factor: 0.3, description: "Rainy season, beaches often closed" },
+                    winter: { factor: 1.0, description: "Peak tourist season (Oct-Mar)" }
+                }
+            },
+            rohtang_pass: {
+                center: [77.2459, 32.3716],
+                zoom: 14,
+                basePoints: [
+                    { coords: [77.2459, 32.3716], type: 'main_viewpoint', weight: 1.0 },
+                    { coords: [77.2465, 32.3720], type: 'snow_play_area', weight: 0.9 },
+                    { coords: [77.2450, 32.3710], type: 'parking_lot', weight: 0.8 },
+                    { coords: [77.2470, 32.3718], type: 'food_stalls', weight: 0.7 }
+                ],
+                peakHours: {
+                    early_morning: 0.5,
+                    morning: 0.9,
+                    noon: 1.0,
+                    afternoon: 0.8,
+                    evening: 0.2
+                },
+                seasonalPatterns: {
+                    summer: { factor: 1.0, description: "Snow activities, accessible by road" },
+                    monsoon: { factor: 0.2, description: "Often closed due to landslides" },
+                    winter: { factor: 0.1, description: "Closed from Nov-May due to heavy snow" }
+                }
+            }
+        };
+
+        const timeFactors = {
+            early_morning: 0.4,
+            morning: 0.8,
+            noon: 1,
+            afternoon: 0.7,
+            evening: 0.9
+        };
+
+        const seasonFactors = {
+            summer: 0.7,
+            monsoon: 0.4,
+            winter: 1
+        };
+
+        const specialDayFactors = {
+            regular: 1,
+            weekend: 1.5,
+            diwali: 2,
+            christmas: 1.8,
+            new_year: 2.5,
+            independence: 2.2
+        };
+
+        const map = new ol.Map({
+            target: 'map',
+            layers: [
+                new ol.layer.Tile({
+                    source: new ol.source.OSM()
+                })
+            ],
+            view: new ol.View({
+                center: ol.proj.fromLonLat(monumentData.taj_mahal.center),
+                zoom: 16
+            })
+        });
+
+        let heatmapLayer = new ol.layer.Heatmap({
+            source: new ol.source.Vector(),
+            blur: 15,
+            radius: 10,
+        });
+        map.addLayer(heatmapLayer);
+
+        function calculateCrowdDensity(time, season, specialDay, baseWeight) {
+            const monument = document.getElementById("monument").value;
+            const monumentInfo = monumentData[monument];
+            
+            let density = baseWeight * monumentInfo.peakHours[time];
+            
+            density *= monumentInfo.seasonalPatterns[season].factor;
+            
+            switch(specialDay) {
+                case 'weekend':
+                    density *= 1.5;
+                    break;
+                case 'diwali':
+                    density *= (season === 'winter' ? 2.5 : 2.0);
+                    break;
+                case 'independence':
+                    density *= 2.2;
+                    if (time === 'morning') density *= 1.5;
+                    break;
+                case 'new_year':
+                    density *= (time === 'evening' ? 3.0 : 1.8);
+                    break;
+                case 'christmas':
+                    density *= (season === 'winter' ? 2.0 : 1.5);
+                    break;
+            }
+
+            density *= (0.8 + Math.random() * 0.4);
+            
+            return Math.min(density, 10);
+        }
+
+        function generateCrowdData(monument, time, season, specialDay) {
+            const base = monumentData[monument];
+            let features = [];
+            
+            base.basePoints.forEach(point => {
+                const pointCount = Math.floor(10 * point.weight) + 3;
+                
+                for(let i = 0; i < pointCount; i++) {
+                    const density = calculateCrowdDensity(time, season, specialDay, point.weight);
+                    
+                    const spread = point.type === 'main_entrance' ? 0.0008 : 0.0005;
+                    const coords = [
+                        point.coords[0] + (Math.random() - 0.5) * spread,
+                        point.coords[1] + (Math.random() - 0.5) * spread
+                    ];
+                    
+                    features.push(new ol.Feature({
+                        geometry: new ol.geom.Point(ol.proj.fromLonLat(coords)),
+                        weight: density
+                    }));
+                }
+            });
+            return features;
+        }
+
+        function updateHeatmap() {
+            const monument = document.getElementById("monument").value;
+            const time = document.getElementById("time").value;
+            const season = document.getElementById("season").value;
+            const specialDay = document.getElementById("special_day").value;
+
+            const features = generateCrowdData(monument, time, season, specialDay);
+            
+            heatmapLayer.getSource().clear();
+            heatmapLayer.getSource().addFeatures(features);
+
+            map.getView().animate({
+                center: ol.proj.fromLonLat(monumentData[monument].center),
+                zoom: monumentData[monument].zoom,
+                duration: 1000
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', updateHeatmap);
+    </script>
+</body>
+</html>
