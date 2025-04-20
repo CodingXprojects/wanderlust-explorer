@@ -75,7 +75,8 @@ Follow these steps to set up the project locally:
 
 ## 📱 Screenshots
 
-*Add screenshots of your application here*
+![image](https://github.com/user-attachments/assets/9b1ffcbb-2592-42e0-8361-fafebba78a78)
+
 
 ## 📝 Notes
 
