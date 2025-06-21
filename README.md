@@ -7,6 +7,11 @@ A comprehensive travel companion application designed to enhance your travel exp
 
 ## ✨ Features
 
+- **Flight Finder**: Input your departure and arrival cities, travel dates, and number of passengers to browse available flights.
+- **Custom Itinerary Builder**: Click on **"Plan Your Itinerary"** to design a travel schedule tailored to your preferences.
+- **Language Translator**: Use the **TravelLingo** tool to convert common phrases into regional Indian languages for smoother communication.
+- **Augmented Reality Previews**: Virtually explore destinations through our **AR feature** before you travel.
+- **AI Travel Assistant**: Chat with our **intelligent assistant** for curated travel tips and personalized suggestions.
 
 
 ## 🛠️ Tech Stack
