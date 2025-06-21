@@ -7,13 +7,7 @@ A comprehensive travel companion application designed to enhance your travel exp
 
 ## ✨ Features
 
-- **Flight Search & Booking** - Search and compare flights across India with real-time data
-- **Itinerary Planner** - Create customized travel plans based on your preferences
-- **Real-time Crowd Monitoring** - Check crowd levels at popular destinations
-- **Interactive AR Experience** - Explore destinations through augmented reality
-- **TravelLingo** - Break language barriers with built-in translation services
-- **AI Travel Assistant** - Get personalized recommendations from our intelligent chatbot
-- **Nearby Attractions** - Discover local wonders around your current location
+
 
 ## 🛠️ Tech Stack
 
